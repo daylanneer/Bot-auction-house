@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOT Auction House</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0c0a08;--card:#1a1610;--card2:#24201a;--border:#3d3528;--accent:#d97706;--accent2:#f59e0b;--accent-glow:rgba(217,119,6,0.12);--text:#f5f0e8;--text2:#a89b84;--green:#4ade80;--red:#f87171;--gold:#fcd34d}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.topbar{background:linear-gradient(135deg,#14110c,#201a12);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--accent2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;-webkit-text-fill-color:white}
+.mode-toggle{display:flex;background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.mode-btn{padding:8px 18px;cursor:pointer;font-size:13px;color:var(--text2);border:none;background:transparent;transition:all .3s}
+.mode-btn.active{background:var(--accent);color:#fff;font-weight:600}
+.wallet-btn{padding:10px 24px;border-radius:12px;border:1px solid var(--accent);background:var(--accent-glow);color:var(--accent2);cursor:pointer;font-size:14px;font-weight:600;transition:all .3s}
+.wallet-btn:hover{background:var(--accent);color:#fff}
+.wallet-btn.connected{border-color:var(--green);color:var(--green);background:rgba(74,222,128,0.1)}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--gold))}
+.stat-label{color:var(--text2);font-size:12px;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.stat-value{font-size:26px;font-weight:700}
+.create-form{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:32px}
+.section-title{font-size:20px;font-weight:700;margin-bottom:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+label{font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
+input,textarea,select{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-size:14px;width:100%;outline:none;font-family:inherit}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:70px}
+.full-width{grid-column:1/-1}
+.submit-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--accent),#b45309);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:transform .2s;margin-top:8px}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(217,119,6,0.3)}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.auctions{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
+.auction-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color .3s,transform .2s}
+.auction-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.auction-title{font-size:18px;font-weight:700;margin-bottom:8px}
+.auction-desc{color:var(--text2);font-size:13px;margin-bottom:16px;line-height:1.5}
+.auction-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.info-item{background:var(--card2);border-radius:10px;padding:12px;text-align:center}
+.info-label{font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:4px}
+.info-value{font-size:16px;font-weight:700}
+.info-value.gold{color:var(--gold)}
+.info-value.green{color:var(--green)}
+.timer{text-align:center;background:linear-gradient(135deg,rgba(217,119,6,0.1),rgba(252,211,77,0.05));border:1px solid rgba(217,119,6,0.2);border-radius:10px;padding:12px;margin-bottom:16px;font-size:14px;color:var(--accent2);font-weight:600}
+.bid-row{display:flex;gap:8px;align-items:end}
+.bid-row input{flex:1}
+.bid-btn{padding:12px 24px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:14px;white-space:nowrap;transition:all .2s}
+.bid-btn:hover{background:var(--accent2);color:#000;transform:translateY(-1px)}
+.end-btn{width:100%;padding:12px;border:none;border-radius:10px;background:var(--green);color:#000;font-weight:700;cursor:pointer;font-size:14px;margin-top:12px}
+.cancel-btn{width:100%;padding:12px;border:none;border-radius:10px;background:transparent;border:1px solid var(--red);color:var(--red);font-weight:600;cursor:pointer;font-size:13px;margin-top:8px}
+.status-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:12px}
+.badge-active{background:rgba(74,222,128,0.15);color:var(--green)}
+.badge-ended{background:rgba(168,155,132,0.15);color:var(--text2)}
+.empty{text-align:center;padding:60px;color:var(--text2);grid-column:1/-1}
+.empty .icon{font-size:48px;margin-bottom:16px}
+.toast{position:fixed;bottom:24px;right:24px;padding:14px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:200;animation:si .3s}
+.toast.success{background:var(--green);color:#000}.toast.error{background:var(--red);color:#fff}
+@keyframes si{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.auctions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo"><div class="logo-icon">🏛️</div>BOT Auction House</div>
+  <div class="mode-toggle"><button class="mode-btn active" onclick="setMode('demo')">Demo Mode</button><button class="mode-btn" onclick="setMode('live')">Live Blockchain</button></div>
+  <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">Connect Wallet</button>
+</div>
+<div class="container">
+  <div class="stats">
+    <div class="stat-card"><div class="stat-label">Live Auctions</div><div class="stat-value" id="liveCount">0</div></div>
+    <div class="stat-card"><div class="stat-label">Total Auctions</div><div class="stat-value" id="totalCount">0</div></div>
+    <div class="stat-card"><div class="stat-label">Volume Traded</div><div class="stat-value" id="volume">0 BOT</div></div>
+    <div class="stat-card"><div class="stat-label">Your Balance</div><div class="stat-value" id="balance">— BOT</div></div>
+  </div>
+  <div class="section-title">🆕 Create Auction</div>
+  <div class="create-form">
+    <div class="form-grid">
+      <div><label>Item Title</label><input id="aTitle" placeholder="e.g. Rare Digital Collectible"></div>
+      <div><label>Min Bid (BOT)</label><input id="aMinBid" type="number" step="0.01" placeholder="0.1"></div>
+      <div class="full-width"><label>Description</label><textarea id="aDesc" placeholder="Describe the item..."></textarea></div>
+      <div><label>Duration</label><select id="aDur"><option value="3600">1 Hour</option><option value="86400" selected>1 Day</option><option value="259200">3 Days</option><option value="604800">1 Week</option></select></div>
+    </div>
+    <button class="submit-btn" id="createBtn" onclick="createAuction()" disabled>Create Auction</button>
+  </div>
+  <div class="section-title">🏛️ Auctions</div>
+  <div class="auctions" id="auctionsList"></div>
+</div>
+<script>
+let mode='demo',connected=false,account=null,demoAuctions=[],demoBalance=100;
+function setMode(m){mode=m;document.querySelectorAll('.mode-btn').forEach((b,i)=>b.classList.toggle('active',i===(m==='demo'?0:1)));resetState()}
+function resetState(){connected=false;account=null;demoAuctions=[];demoBalance=100;document.getElementById('walletBtn').textContent='Connect Wallet';document.getElementById('walletBtn').classList.remove('connected');document.getElementById('createBtn').disabled=true;updateUI()}
+function toast(msg,t='success'){const e=document.createElement('div');e.className='toast '+t;e.textContent=msg;document.body.appendChild(e);setTimeout(()=>e.remove(),3000)}
+function connectWallet(){
+  if(connected){connected=false;account=null;document.getElementById('walletBtn').textContent='Connect Wallet';document.getElementById('walletBtn').classList.remove('connected');document.getElementById('createBtn').disabled=true;return}
+  if(mode==='demo'){
+    account='0xAu'+Math.random().toString(16).slice(2,10);connected=true;
+    document.getElementById('walletBtn').textContent=account.slice(0,10)+'...';
+    document.getElementById('walletBtn').classList.add('connected');
+    document.getElementById('createBtn').disabled=false;
+    seedAuctions();updateUI();toast('Demo wallet connected!');
+  }
+}
+function seedAuctions(){
+  const items=[
+    {title:'Rare Digital Painting',desc:'One-of-a-kind AI-generated masterpiece',min:0.5,high:2.3,time:86400},
+    {title:'BOT Chain Genesis Badge',desc:'Exclusive badge for early adopters',min:0.1,high:0.8,time:172800},
+    {title:'Premium Domain: defi.bot',desc:'Premium .bot domain name registration',min:1.0,high:5.2,time:43200},
+    {title:'Smart Contract Audit Package',desc:'Professional security audit for your DApp',min:2.0,high:0,time:259200},
+    {title:'VIP Access Pass',desc:'Lifetime VIP access to BOT Chain events',min:0.5,high:1.5,time:-3600}
+  ];
+  items.forEach((it,i)=>{
+    const ended=it.time<0;
+    demoAuctions.push({seller:i%2===0?account:'0xSe'+Math.random().toString(16).slice(2,8),title:it.title,description:it.desc,minBid:it.min,highestBid:it.high,highestBidder:it.high>0?'0xBd'+Math.random().toString(16).slice(2,8):null,endTime:Date.now()+it.time*1000,status:ended?1:0});
+  });
+}
+function fmtTime(ms){if(ms<=0)return'Ended';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);return`${h}h ${m}m ${s}s`}
+function updateUI(){
+  const live=demoAuctions.filter(a=>a.status===0).length;
+  const vol=demoAuctions.filter(a=>a.status===1).reduce((s,a)=>s+a.highestBid,0);
+  document.getElementById('liveCount').textContent=live;
+  document.getElementById('totalCount').textContent=demoAuctions.length;
+  document.getElementById('volume').textContent=vol.toFixed(2)+' BOT';
+  document.getElementById('balance').textContent=connected?demoBalance.toFixed(2)+' BOT':'— BOT';
+  renderAuctions();
+}
+function renderAuctions(){
+  const el=document.getElementById('auctionsList');
+  if(!connected||!demoAuctions.length){el.innerHTML='<div class="empty"><div class="icon">🏛️</div>'+(connected?'No auctions yet':'Connect wallet to browse')+'</div>';return}
+  el.innerHTML=demoAuctions.map((a,i)=>{
+    const isActive=a.status===0;const remaining=a.endTime-Date.now();const canEnd=isActive&&remaining<=0;
+    return `<div class="auction-card">
+      <span class="status-badge ${isActive?'badge-active':'badge-ended'}">${isActive?(canEnd?'Ending...':'Live'):'Ended'}</span>
+      <div class="auction-title">${a.title}</div>
+      <div class="auction-desc">${a.description}</div>
+      <div class="auction-info">
+        <div class="info-item"><div class="info-label">Min Bid</div><div class="info-value">${a.minBid} BOT</div></div>
+        <div class="info-item"><div class="info-label">Highest Bid</div><div class="info-value gold">${a.highestBid>0?a.highestBid.toFixed(2)+' BOT':'No bids'}</div></div>
+      </div>
+      ${isActive&&!canEnd?`<div class="timer">⏱️ ${fmtTime(remaining)} remaining</div>`:''}
+      ${a.highestBidder?`<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Top bidder: ${a.highestBidder}</div>`:''}
+      ${isActive&&!canEnd&&a.seller!==account?`<div class="bid-row"><input id="bid${i}" type="number" step="0.01" placeholder="Your bid" min="${Math.max(a.minBid,a.highestBid+0.01).toFixed(2)}"><button class="bid-btn" onclick="placeBid(${i})">Place Bid</button></div>`:''}
+      ${canEnd?`<button class="end-btn" onclick="endAuction(${i})">End Auction & Settle</button>`:''}
+      ${isActive&&!a.highestBidder&&a.seller===account?`<button class="cancel-btn" onclick="cancelAuction(${i})">Cancel Auction</button>`:''}
+      ${a.status===1&&a.highestBidder?`<div style="text-align:center;padding:12px;background:rgba(74,222,128,0.08);border-radius:10px;margin-top:8px;color:var(--green);font-weight:600">Winner: ${a.highestBidder}</div>`:''}
+    </div>`}).join('');
+}
+function createAuction(){
+  const title=document.getElementById('aTitle').value,desc=document.getElementById('aDesc').value,min=parseFloat(document.getElementById('aMinBid').value),dur=parseInt(document.getElementById('aDur').value);
+  if(!title||!min){toast('Fill title and min bid','error');return}
+  demoAuctions.unshift({seller:account,title,description:desc||'No description',minBid:min,highestBid:0,highestBidder:null,endTime:Date.now()+dur*1000,status:0});
+  document.getElementById('aTitle').value='';document.getElementById('aDesc').value='';document.getElementById('aMinBid').value='';
+  updateUI();toast('Auction created!');
+}
+function placeBid(i){
+  const amt=parseFloat(document.getElementById('bid'+i).value);const a=demoAuctions[i];
+  if(!amt||amt<a.minBid){toast('Bid must be >= min bid','error');return}
+  if(amt<=a.highestBid){toast('Must outbid current highest','error');return}
+  if(amt>demoBalance){toast('Insufficient balance','error');return}
+  demoBalance-=amt;if(a.highestBidder===account)demoBalance+=a.highestBid;
+  a.highestBid=amt;a.highestBidder=account;updateUI();toast(`Bid ${amt} BOT placed!`);
+}
+function endAuction(i){demoAuctions[i].status=1;if(demoAuctions[i].seller===account)demoBalance+=demoAuctions[i].highestBid*0.975;updateUI();toast('Auction ended!')}
+function cancelAuction(i){demoAuctions[i].status=2;updateUI();toast('Auction cancelled')}
+setInterval(()=>{if(connected)renderAuctions()},1000);
+</script>
+</body>
+</html>
